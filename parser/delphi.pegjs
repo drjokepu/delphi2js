@@ -26,6 +26,10 @@ identifier_list
 	/ identifier
 	
 keyword
+	= turbo_pascal_keyword
+	/ object_pascal_keyword
+
+turbo_pascal_keyword
 	= "and"
 	/ "array"
 	/ "begin"
@@ -34,13 +38,30 @@ keyword
 	/ "else"
 	/ "function"
 	/ "if"
+	/ "implementation"
+	/ "interface"
+	/ "label"
 	/ "of"
 	/ "or"
 	/ "procedure"
+	/ "program"
+	/ "shl"
+	/ "shr"
+	/ "string"
 	/ "then"
+	/ "type"
 	/ "unit"
+	/ "uses"
 	/ "var"
 	
+object_pascal_keyword	
+	= "as"
+	/ "class"
+	/ "except"
+	/ "finally"
+	/ "raise"
+	/ "try"
+
 exp_binary_operator
 	= "*"
 	/ "<="
@@ -75,7 +96,7 @@ assignment_operator
 	/ "/="
 	
 unit
-	= _ unit_header _ interface_part _ implementation_part _
+	= _ unit_header _ interface_part _ implementation_part _ "end" _ "." _
 	
 unit_header
 	= "unit" _ identifier _ ";"
@@ -186,13 +207,21 @@ statement
 	
 simple_statement
 	= assignment
+	/ procedure_statement
 
 assignment
 	= identifier _ assignment_operator _ expression
 	
+procedure_statement
+	= procedure_statement_target (_ actual_parameter_list)?
+
+procedure_statement_target
+	= identifier	
+
 structured_statement
 	= compound_statement
 	/ conditional_statement
+	/ try_statement
 	
 compound_statement
 	= "begin" _ (statement_list _)? "end"
@@ -203,23 +232,52 @@ conditional_statement
 if_statement
 	= "if" _ expression _ "then" _ statement _ "else" _ statement
 	/ "if" _ expression _ "then" _ statement
+	
+try_statement
+	= try_except_statement
+	/ try_finally_statement
+	
+try_except_statement
+	= "try" _ statement_list _ "except" _ (exception_handlers _)? "end"
+	
+exception_handlers
+	= exception_handler_clause
+	/ statement_list
+
+exception_handler_clause
+	= exception_handler_list (_ "else" _ statement_list)?
+
+exception_handler_list
+	= exception_handler _ ";" _ exception_handler_list
+	/ exception_handler
+	
+exception_handler
+	= "on" (_ identifier _ ":" )? _ type _ "do" _ statement
+	
+try_finally_statement
+	= "try" _ statement_list _ "finally" _ statement_list _ "end"
 
 type
 	= simple_type
 	/ string_type
+	/ type_identifier
 	
 simple_type
 	= ordinal_type
 	/ real_type
-	
+
 ordinal_type
-	= 'Integer'
+	= "Integer"
 	
 real_type
-	= 'Real'
+	= "Real"
 	
 string_type
 	= "string"
+	
+type_identifier
+	= "type" _ identifier
+	/ identifier
 	
 expression
 	= simple_expression _ exp_binary_operator _ simple_expression
