@@ -10,6 +10,6 @@ new Parser().parseFile('test-files/EventLog.pas').then(data => {
 		console.error(colors.red(err.message) + os.EOL +
 			'  at line ' + err.location.start.line + ', column ' + err.location.start.column + '.');
 	} else {
-		console.error(JSON.stringify(err, null, 2));
+		console.error(colors.red('Error:') + ' ' + err + os.EOL + JSON.stringify(err, null, 2));
 	}
 }).done();

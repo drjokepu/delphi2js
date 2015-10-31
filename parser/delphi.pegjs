@@ -1,3 +1,41 @@
+{
+	function flattenComment(content) {
+		if (!content) {
+			return '';
+		}
+	
+		return content.map(function (token) {
+			if (token.constructor.name === 'Array') {
+				return token.join('');
+			} else {
+				return token;
+			}
+		}).join('');
+	}
+	
+	function flattenWhitespace(content) {
+		if (!content) {
+			return null;
+		}
+		
+		if (content.constructor.name === 'Array') {
+			 var filtered = content.map(function(element) {
+			 	return flattenWhitespace(element);
+			 }).filter(function (element) {
+			 	return !!element;
+			 });
+			 
+			 if (filtered.length === 0) {
+			 	return null;
+			 } else {
+			 	return filtered;
+			 }
+		} else {
+			return content;
+		}
+	}
+}
+
 start
 	= pas
 	
@@ -5,25 +43,25 @@ pas
 	= unit
 	
 _
-	= __?
+	= content:__? { return flattenWhitespace(content); }
 
 __
-	= whitespace _?
+	= whitespace tail:_? { return flattenWhitespace(tail); }
 	/ comment _?
 
 whitespace
-	= [ \t\n\r]+
+	= [ \t\n\r]+ { return null; }
 
 comment
-	= "(*" ( [^*] / ("*" [^)]) )* "*)"
-	/ "{" [^}]* "}"
+	= "(*" content:( [^*] / ("*" [^)]) )* "*)" { return { type: "comment", content: flattenComment(content) }; }
+	/ "{" content:[^}]* "}" { return { type: "comment", content: content ? content.join("") : "" }; }
 	
 identifier
-	= !keyword [a-zA-Z_][0-0a-zA-Z]*
+	= !keyword head:[a-zA-Z_] tail:[0-0a-zA-Z]* { return { type: "identifier", value: tail ? head + tail.join("") : head }; }
 	
 identifier_list
-	= identifier _ "," _ identifier_list
-	/ identifier
+	= head:identifier _ "," _ tail:identifier_list { return [head].concat(tail); }
+	/ identifier:identifier { return [identifier]; }
 	
 keyword
 	= turbo_pascal_keyword
@@ -96,17 +134,37 @@ assignment_operator
 	/ "/="
 	
 unit
-	= _ unit_header _ interface_part _ implementation_part _ "end" _ "." _
+	= c_pre:_ h:unit_header c_int:_ int:interface_part c_imp:_ imp:implementation_part c_end0:_ "end" c_end1:_ "." c_post:_ {
+			return {
+				type: "unit",
+				header: h,
+				interface: int,
+				implementation: imp,
+				comments: {
+					pre: c_pre,
+					interface: c_int,
+					implementation: c_imp,
+					end: [c_end0, c_end1],
+					post: c_post
+				}
+			};
+	  }
 	
 unit_header
-	= "unit" _ identifier _ ";"
+	= "unit" _ identifier:identifier _ ";" { return { type: "unit_header", identifier: identifier }; }
 	
 interface_part
-	= "interface" _ (uses_clause _)? (interface_declaration_part_list _)?
+	= "interface" _ uses_clause:(uses_clause _)? declarations:(interface_declaration_part_list _)? {
+	  		return {
+			  type: "interface",
+			  uses_clause: uses_clause && uses_clause.length > 0 ? uses_clause[0] : null,
+			  declarations: declarations && declarations.length > 0 ? declarations[0] : null,
+			};
+	  }
 	
 interface_declaration_part_list
-	= interface_declaration_part _ interface_declaration_part_list
-	/ interface_declaration_part
+	= head:interface_declaration_part _ tail:interface_declaration_part_list { return [head].concat(tail); }
+	/ decl:interface_declaration_part { return [decl]; }
 
 interface_declaration_part
 	= constant_declaration_part
@@ -114,65 +172,90 @@ interface_declaration_part
 	/ variable_declaration_part
 	
 constant_declaration_part
-	= "const" _ constant_declaration_list
-	/ "const" _
+	= "const" _ list:constant_declaration_list { return { type: "const_declaration_part", declarations: list }; }
+	/ "const" _ { return { type: "const_declaration_part", declarations: [] }; }
 
 constant_declaration_list
-	= constant_declaration _ constant_declaration_list
-	/ constant_declaration _
+	= head:constant_declaration _ tail:constant_declaration_list { return [head].concat(tail); }
+	/ decl:constant_declaration _ { return [decl]; }
 	
 constant_declaration
-	= identifier _ "=" _ expression ";"
+	= identifier:identifier _ "=" _ value:expression ";" { return { type: "constant_declaration", identifier: identifier, value: value }; }
 
 procedure_headers_part
 	= prodecure_header
 	/ function_header
 	
 prodecure_header
-	= "procedure" _ identifier _ (formal_parameter_list _)? ";" _
+	= "procedure" _ identifier:identifier _ params:(formal_parameter_list _)? ";" _ {
+			return {
+				type: "procedure_header",
+				identifier: identifier,
+				params: params && params.length > 0 ? params[0] : []
+			};
+	  }
 	
 function_header
-	= "function" _ identifier _ (formal_parameter_list _)? ":" _ type _ ";" _
+	= "function" _ identifier:identifier _ params:(formal_parameter_list _)? ":" _ type:type _ ";" _ {
+			return {
+				type: "function_header",
+				identifier: identifier,
+				params: params && params.length > 0 ? params[0] : [],
+				return_type: type
+			};
+	  }
 	
 formal_parameter_list
-	= "(" _ parameter_declaration_list _ ")"
+	= "(" _ list:parameter_declaration_list _ ")" { return list; }
 	
 parameter_declaration_list
-	= parameter_declaration _ ";" _ parameter_declaration_list
-	/ parameter_declaration
+	= head:parameter_declaration _ ";" _ tail:parameter_declaration_list { return [head].concat(tail); }
+	/ decl:parameter_declaration { return [decl]; }
 	
 parameter_declaration
 	= value_parameter
 	
 value_parameter
-	= identifier_list _ ":" _ type
+	= id_list:identifier_list _ ":" _ type:type {
+			return {
+				type: "value_parameter",
+				identifiers: id_list,
+				param_type: type
+			};
+	  }
 	
 variable_declaration_part
-	= "var" _ variable_declaration_list
+	= "var" _ list:variable_declaration_list { return { name: "variable_declaration_part", list: list }; }
 	
 variable_declaration_list
-	= variable_declaration _ variable_declaration_list
-	/ variable_declaration
+	= head:variable_declaration _ tail:variable_declaration_list { return [head].concat(tail); }
+	/ decl:variable_declaration { return [decl]; }
 	
 variable_declaration
 	= identifier_list _ ":" _ type (_ "=" _ expression)? _ ";"
 
 implementation_part
-	= "implementation" _ (uses_clause _)? declaration_part
+	= "implementation" _ uses:(uses_clause _)? decl:declaration_part {
+			return {
+				type: "implementation",
+				uses_clause: uses && uses.length > 0 ? uses[0] : null,
+				declarations: decl
+			};
+	  }
 
 uses_clause
-	= "uses" _ uses_clause_list _ ";"
+	= "uses" _ list:uses_clause_list _ ";" { return { type: "uses_clause", list: list }; }
 	
 uses_clause_list
-	= identifier _ "," _ uses_clause_list
-	/ identifier
+	= head:identifier _ "," _ tail:uses_clause_list { return [head].concat(tail); }
+	/ identifier:identifier { return [identifier]; }
 	
 declaration_part
 	= declaration_list?
 	
 declaration_list
-	= declaration _ declaration_list
-	/ declaration
+	= head:declaration _ tail:declaration_list { return [head].concat(tail); }
+	/ decl:declaration { return [decl]; }
 	
 declaration
 	= variable_declaration_part
@@ -183,23 +266,38 @@ procedure_function_declaration_part
 	/ function_declaration
 	
 procedure_declaration
-	= "procedure" _ identifier _ (formal_parameter_list _)? ";" _ subroutine_block _ ";"
+	= "procedure" _ id:identifier _ params:(formal_parameter_list _)? ";" _ block:subroutine_block _ ";" {
+			return {
+				type: "procedure_declaration",
+				identifier: id,
+				params: params && params.length > 0 ? params[0] : null,
+				block: block
+			}
+	  }
 	
 function_declaration
-	= "function" _ identifier _ (formal_parameter_list _)? ":" _ type _ ";" _ subroutine_block _ ";"
+	= "function" _ id:identifier _ params:(formal_parameter_list _)? ":" _ type:type _ ";" _ block:subroutine_block _ ";" {
+			return {
+				type: "function_declaration",
+				identifier: id,
+				params: params && params.length > 0 ? params[0] : null,
+				return_type: type,
+				block: block
+			}
+	  }
 
 subroutine_block
 	= block
 	
 block
-	= declaration_part _ statement_part
+	= decl:declaration_part _ st:statement_part { return { type: "block", declarations: decl, statements: st }; }
 	
 statement_part
 	= compound_statement
 	
 statement_list
-	= statement _ ";" _ statement_list
-	/ statement _ ";"
+	= head:statement _ ";" _ tail:statement_list { return [head].concat(tail); }
+	/ st:statement _ ";" { return [st]; }
 	
 statement
 	= simple_statement
@@ -210,7 +308,15 @@ simple_statement
 	/ procedure_statement
 
 assignment
-	= identifier _ assignment_operator _ expression
+	= id:identifier _ op:assignment_operator _ exp:expression {
+			return {
+				type: "assignment",
+				identifier: id,
+				operator: op,
+				expression: exp
+			};
+		}
+				
 	
 procedure_statement
 	= procedure_statement_target (_ actual_parameter_list)?
@@ -224,7 +330,12 @@ structured_statement
 	/ try_statement
 	
 compound_statement
-	= "begin" _ (statement_list _)? "end"
+	= "begin" _ list:(statement_list _)? "end" {
+			return {
+				type: "compound_statement",
+				list: list && list.length > 0 ? list[0] : null
+			};
+		}
 	
 conditional_statement
 	= if_statement
@@ -308,27 +419,33 @@ constant
 	/ numeric_constant
 	
 string_constant
-	= "'" ([^'] / "''")* "'"
-	/ '#' [0-9]+
+	= "'" value:([^'] / "''")* "'" { return { type: "string_constant", value: value ? value.join("") : "" }; }
+	/ '#' value:[0-9]+ { return { type: "control_string", value: parseInt(value.join(""), 10) }; }
 
 numeric_constant
 	= integer_constant
 	
 integer_constant
-	= [0-9]+
+	= value:[0-9]+ { return { type: "integer_constant", value: parseInt(value.join(""), 10) }; }
 	
 function_call
-	= function_call_target (_ actual_parameter_list)?
+	= target:function_call_target params:(_ actual_parameter_list)? {
+			return {
+				type: "function_call",
+				target: target,
+				params: params && params.length > 1 ? params[1] : null
+			};
+		}
 	
 function_call_target
 	= identifier
 	
 actual_parameter_list
-	= "(" _ actual_parameter_list_expression_list _ ")"
+	= "(" _ list:actual_parameter_list_expression_list _ ")" { return list; }
 	
 actual_parameter_list_expression_list
-	= expression _ "," _ actual_parameter_list_expression_list
-	/ expression
+	= head:expression _ "," _ tail:actual_parameter_list_expression_list { return [head].concat(tail); }
+	/ exp:expression { return [exp]; }
 
 set_constructor
 	= "[" _ (set_group_list _)? "]"
