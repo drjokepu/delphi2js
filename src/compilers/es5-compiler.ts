@@ -1,93 +1,13 @@
-import * as os from 'os';
 import * as ast from './ast';
+import * as compiler from './compiler';
 
-class Context {
-	private stack: ContextState[];
-	
-	constructor(rootNode: ast.Node) {
-		this.stack = [new ContextState(rootNode)];
-	}
-	
-	state(parent?: number) {
-		if (parent) {
-			return this.stack[this.stack.length - 1 - parent];
-		} else {
-			return this.stack[this.stack.length - 1];
-		}
-	}
-	
-	getStack(): ContextState[] {
-		return this.stack;
-	}
-	
-	push(node: ast.Node) {
-		this.stack.push(new ContextState(node));
-	}
-	
-	pop() {
-		this.stack.pop();
-	}
-}
-
-class ContextState {
-	node: ast.Node;
-	
-	constructor(node: ast.Node) {
-		this.node = node;
-	}
-}
-
-export function compile(fileAst: ast.PasFile): string {
-	return new Compiler().compile(fileAst);
-}
-
-function nodeError(node: ast.Node, ctx?: Context): Error {
-	console.error(JSON.stringify(node, null, 2));
-	if (ctx) {
-		let str = '';
-		const stack = ctx.getStack();
-		for (let i = 0; i < stack.length; i++) {
-			for (let j = 0; j < i; j++) {
-				str += '  ';
-			}
-			
-			str += stack[i].node.type;
-			str += os.EOL;
-		}
-		
-		console.log(str);
-	}
-	
-	return new Error('Unsupported node type: ' + node.type);
-}
-
-function padStringWithZeroes(str: string, minLength: number) {
-	if (str.length < minLength) {
-		let str2 = str;
-		while (str2.length < minLength) {
-			str2 = '0' + str2;
-		}
-		return str2;
-	} else {
-		return str;
-	}
-}
-
-class Compiler {
-	private ctx: Context;
-	private output: string;
-	
+class ES5Compiler extends compiler.Compiler {
 	constructor() {
-		this.ctx = null;
-		this.output = null;
-	}
-	
-	private append(str: string) {
-		this.output += str;
+		super();
 	}
 	
 	compile(fileAst: ast.PasFile): string {
-		this.ctx = new Context(fileAst);
+		this.ctx = new compiler.Context(fileAst);
 		this.output = '';
 		
 		switch (fileAst.type) {
@@ -98,14 +18,10 @@ class Compiler {
 				this.compileUnit(<ast.Unit>fileAst);
 				break;
 			default:
-				throw nodeError(fileAst);
+				throw this.nodeError(fileAst);
 		}
 		
 		return this.output;
-	}
-	
-	private isTopLevel(): boolean {
-		return this.ctx.state(1).node.type === 'program';
 	}
 	
 	private compileProgram(node: ast.Program): void {
@@ -139,7 +55,7 @@ class Compiler {
 				this.compileFunctionDeclaration(<ast.FunctionDeclaration>node);
 				break;
 			default:
-				throw nodeError(node);
+				throw this.nodeError(node);
 		}
 	}
 	
@@ -189,7 +105,7 @@ class Compiler {
 				this.compileValueParameter(<ast.ValueParameter>node);
 				break;
 			default:
-				throw nodeError(node);
+				throw this.nodeError(node);
 		}
 	}
 	
@@ -254,7 +170,7 @@ class Compiler {
 				this.compileTryFinallyStatement(<ast.TryFinallyStatement>node);
 				break;
 			default:
-				throw nodeError(node, this.ctx);
+				throw this.nodeError(node);
 		}
 	}
 	
@@ -283,7 +199,7 @@ class Compiler {
 				this.compileIdentifier(<ast.Identifier>node);
 				break;
 			default:
-				throw nodeError(node);
+				throw this.nodeError(node);
 		}
 	}
 	
@@ -306,7 +222,7 @@ class Compiler {
 					this.compileIdentifier(<ast.Identifier>node);
 					break;
 				default:
-					throw nodeError(node);
+					throw this.nodeError(node);
 			}
 		} finally {
 			this.ctx.pop();
@@ -423,7 +339,7 @@ class Compiler {
 				this.compileSetConstructor(<ast.SetConstructor>node);
 				break;
 			default:
-				throw nodeError(node, this.ctx);
+				throw this.nodeError(node);
 		}
 	}
 	
@@ -439,9 +355,9 @@ class Compiler {
 		}
 		
 		if (node.value < 256) {
-			this.append('"\\x' + padStringWithZeroes(node.value.toString(16), 2) + '"');
+			this.append('"\\x' + compiler.Compiler.padStringWithZeroes(node.value.toString(16), 2) + '"');
 		} else {
-			this.append('"\\u' + padStringWithZeroes(node.value.toString(16), 4) + '"');
+			this.append('"\\u' + compiler.Compiler.padStringWithZeroes(node.value.toString(16), 4) + '"');
 		}
 	}
 	
@@ -495,7 +411,7 @@ class Compiler {
 					this.compileIdentifier(<ast.Identifier>node);
 					break;
 				default:
-					throw nodeError(node);
+					throw this.nodeError(node);
 			}
 		} finally {
 			this.ctx.pop();
@@ -530,3 +446,4 @@ class Compiler {
 	}
 }
 
+export default ES5Compiler;

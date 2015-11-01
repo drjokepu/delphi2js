@@ -4,14 +4,13 @@ import colors from 'colors/safe';
 import minimist from 'minimist';
 
 import * as os from 'os';
-import * as compiler from './compiler';
+import * as compiler from './compilers/compiler';
+import * as compilerFactory from './compilers/factory';
 import Parser from './parser';
 
 let argv = minimist(process.argv.slice(2), {
 	boolean: ['ast', 'pretty']
 });
-
-
 
 if (argv._.length === 0) {
 	console.error("usage: node delphi.pegjs [--ast | --pretty] source_file");
@@ -22,7 +21,8 @@ new Parser().parseFile(argv._[0]).then(data => {
 	if (argv['ast']) {
 		console.log(JSON.stringify(data, null, 2));
 	} else {
-		let js = compiler.compile(data);
+		const compInstance = compilerFactory.makeCompiler(compilerFactory.CompilerTarget.ES5);
+		let js = compInstance.compile(data);
 		if (argv['pretty']) {
 			js = beautify.js_beautify(js, {});
 		}
