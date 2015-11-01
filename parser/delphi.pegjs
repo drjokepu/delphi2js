@@ -232,7 +232,14 @@ variable_declaration_list
 	/ decl:variable_declaration { return [decl]; }
 	
 variable_declaration
-	= identifier_list _ ":" _ type (_ "=" _ expression)? _ ";"
+	= identifier_list:identifier_list _ ":" _ type:type exp:(_ "=" _ expression)? _ ";" {
+			return {
+				type: "variable_declaration",
+				identifiers: identifier_list,
+				variable_type: type,
+				expression: exp && exp.length > 3 ? exp[3] : null
+			};
+	}
 
 implementation_part
 	= "implementation" _ uses:(uses_clause _)? decl:declaration_part {
@@ -341,15 +348,34 @@ conditional_statement
 	= if_statement
 
 if_statement
-	= "if" _ expression _ "then" _ statement _ "else" _ statement
-	/ "if" _ expression _ "then" _ statement
+	= "if" _ exp:expression _ "then" _ true_branch:statement _ "else" _ false_branch:statement {
+				return {
+					type: "if",
+					condition: exp,
+					true_branch: true_branch,
+					false_branch: false_branch
+				};
+			}
+	/ "if" _ exp:expression _ "then" _ true_branch:statement {
+				return {
+					type: "if",
+					condition: exp,
+					true_branch: true_branch
+				};
+			}
 	
 try_statement
 	= try_except_statement
 	/ try_finally_statement
 	
 try_except_statement
-	= "try" _ statement_list _ "except" _ (exception_handlers _)? "end"
+	= "try" _ body:statement_list _ "except" _ hand:(exception_handlers _)? "end" {
+			return {
+				type: "try_except",
+				body: body,
+				handlers: hand
+			};
+		}
 	
 exception_handlers
 	= exception_handler_clause
@@ -366,7 +392,13 @@ exception_handler
 	= "on" (_ identifier _ ":" )? _ type _ "do" _ statement
 	
 try_finally_statement
-	= "try" _ statement_list _ "finally" _ statement_list _ "end"
+	= "try" _ body:statement_list _ "finally" _ fin:statement_list _ "end" {
+		return {
+			type: "try_finally",
+			body: body,
+			fin: fin
+		};
+	}
 
 type
 	= simple_type
@@ -391,21 +423,21 @@ type_identifier
 	/ identifier
 	
 expression
-	= simple_expression _ exp_binary_operator _ simple_expression
+	= left:simple_expression _ op:exp_binary_operator _ right:simple_expression { return { type: "binary_op", op: op, left: left, right: right }; }
 	/ simple_expression
 
 simple_expression
 	= term_list
 	
 term_list
-	= term _ term_binary_operator _ term_list
+	= left:term _ op:term_binary_operator _ right:term_list { return { type: "binary_op", op: op, left: left, right: right }; }
 	/ term
 	
 term
 	= factor_list
 	
 factor_list
-	= factor _ factor_binary_operator _ factor_list
+	= left:factor _ op:factor_binary_operator _ right:factor_list { return { type: "binary_op", op: op, left: left, right: right }; }
 	/ factor
 	
 factor
@@ -448,12 +480,17 @@ actual_parameter_list_expression_list
 	/ exp:expression { return [exp]; }
 
 set_constructor
-	= "[" _ (set_group_list _)? "]"
+	= "[" _ list:(set_group_list _)? "]" {
+			return {
+				type: "set_constructor",
+				list: list && list.length > 0 ? list[0] : null
+			};
+		}
 	
 set_group_list
-	= set_group _ "," _ set_group_list
-	/ set_group
+	= head:set_group _ "," _ tail:set_group_list { return [head].concat(tail); }
+	/ grp:set_group { return [grp]; }
 	
 set_group
-	= expression _ '..' _ expression
-	/ expression
+	= start:expression _ '..' _ end:expression { return { type: 'range', start: start, end: end }; }
+	/ exp:expression { return exp; };
