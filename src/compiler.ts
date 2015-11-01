@@ -130,6 +130,11 @@ class Compiler {
 	}
 	
 	private compileParameterList(params: ast.Expression[]): void {
+		if (!params) {
+			this.append('()');
+			return;
+		}
+		
 		this.append('(');
 		for (let i = 0; i < params.length; i++) {
 			if (i > 0) {
