@@ -1,6 +1,7 @@
 ///<reference path="../typings/tsd.d.ts" />
 import colors from 'colors/safe';
 import * as os from 'os';
+import * as compiler from './compiler';
 import Parser from './parser';
 
 if (process.argv.length < 3) {
@@ -9,7 +10,7 @@ if (process.argv.length < 3) {
 }
 
 new Parser().parseFile(process.argv[2]).then(data => {
-	console.log(JSON.stringify(data, null, 2));
+	console.log(compiler.compile(data));
 }, err => {
 	if (err.name === 'SyntaxError') {
 		console.error(colors.red(err.message) + os.EOL +

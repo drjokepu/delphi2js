@@ -4,6 +4,8 @@
 		"outDir": "../es6"
 	},
 	"files": [
+		"ast.ts",
+		"compiler.ts",
 		"delphi2js.ts",
 		"parser.ts"
 	]

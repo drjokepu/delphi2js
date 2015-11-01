@@ -40,7 +40,8 @@ start
 	= pas
 	
 pas
-	= unit
+	= program
+	/ unit
 	
 _
 	= content:__? { return flattenWhitespace(content); }
@@ -132,7 +133,23 @@ assignment_operator
 	/ "-="
 	/ "*="
 	/ "/="
-	
+
+program
+	= c_pre:_ h:program_header uses:(_ uses_clause )? c_body:_ body:block c_end:_ "." c_post:_ {
+			return {
+				type: "program",
+				header: h,
+				uses: uses && uses.length > 1 ? uses[1] : null,
+				body: body,
+				comments: {
+					pre: c_pre,
+					uses: uses && uses.length > 0 ? uses[0]: null,
+					end: c_end,
+					post: c_post
+				}
+			}
+	}
+
 unit
 	= c_pre:_ h:unit_header c_int:_ int:interface_part c_imp:_ imp:implementation_part c_end0:_ "end" c_end1:_ "." c_post:_ {
 			return {
@@ -149,6 +166,9 @@ unit
 				}
 			};
 	  }
+	  
+program_header
+	= "program" _ identifier:identifier _ ";" { return { type: "program_header", identifier: identifier }; }
 	
 unit_header
 	= "unit" _ identifier:identifier _ ";" { return { type: "unit_header", identifier: identifier }; }
@@ -304,7 +324,7 @@ statement_part
 	
 statement_list
 	= head:statement _ ";" _ tail:statement_list { return [head].concat(tail); }
-	/ st:statement _ ";" { return [st]; }
+	/ st:statement _ ";"? { return [st]; }
 	
 statement
 	= simple_statement
@@ -326,7 +346,13 @@ assignment
 				
 	
 procedure_statement
-	= procedure_statement_target (_ actual_parameter_list)?
+	= target:procedure_statement_target params:(_ actual_parameter_list)? {
+			return {
+				type: "procedure_statement",
+				target: target,
+				params: params && params.length > 1 ? params[1] : null
+			};
+		}
 
 procedure_statement_target
 	= identifier	
