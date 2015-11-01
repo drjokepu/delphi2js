@@ -10,6 +10,7 @@ if (process.argv.length < 3) {
 }
 
 new Parser().parseFile(process.argv[2]).then(data => {
+	// console.log(JSON.stringify(data, null, 2));
 	console.log(compiler.compile(data));
 }, err => {
 	if (err.name === 'SyntaxError') {

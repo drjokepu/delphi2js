@@ -58,7 +58,7 @@ comment
 	/ "{" content:[^}]* "}" { return { type: "comment", content: content ? content.join("") : "" }; }
 	
 identifier
-	= !keyword head:[a-zA-Z_] tail:[0-0a-zA-Z]* { return { type: "identifier", value: tail ? head + tail.join("") : head }; }
+	= !keyword head:[a-zA-Z_] tail:[0-0a-zA-Z_]* { return { type: "identifier", value: tail ? head + tail.join("") : head }; }
 	
 identifier_list
 	= head:identifier _ "," _ tail:identifier_list { return [head].concat(tail); }
@@ -177,7 +177,7 @@ interface_part
 	= "interface" _ uses_clause:(uses_clause _)? declarations:(interface_declaration_part_list _)? {
 	  		return {
 			  type: "interface",
-			  uses_clause: uses_clause && uses_clause.length > 0 ? uses_clause[0] : null,
+			  usesClause: uses_clause && uses_clause.length > 0 ? uses_clause[0] : null,
 			  declarations: declarations && declarations.length > 0 ? declarations[0] : null,
 			};
 	  }
@@ -221,7 +221,7 @@ function_header
 				type: "function_header",
 				identifier: identifier,
 				params: params && params.length > 0 ? params[0] : [],
-				return_type: type
+				returnType: type
 			};
 	  }
 	
@@ -240,7 +240,7 @@ value_parameter
 			return {
 				type: "value_parameter",
 				identifiers: id_list,
-				param_type: type
+				paramType: type
 			};
 	  }
 	
@@ -256,7 +256,7 @@ variable_declaration
 			return {
 				type: "variable_declaration",
 				identifiers: identifier_list,
-				variable_type: type,
+				variableType: type,
 				expression: exp && exp.length > 3 ? exp[3] : null
 			};
 	}
@@ -335,15 +335,20 @@ simple_statement
 	/ procedure_statement
 
 assignment
-	= id:identifier _ op:assignment_operator _ exp:expression {
+	= target:assignment_target _ op:assignment_operator _ exp:expression {
 			return {
 				type: "assignment",
-				identifier: id,
+				target: target,
 				operator: op,
 				expression: exp
 			};
 		}
-				
+
+assignment_target
+	= variable_reference
+	
+variable_reference
+	= identifier
 	
 procedure_statement
 	= target:procedure_statement_target params:(_ actual_parameter_list)? {
@@ -378,15 +383,15 @@ if_statement
 				return {
 					type: "if",
 					condition: exp,
-					true_branch: true_branch,
-					false_branch: false_branch
+					trueBranch: true_branch,
+					falseBranch: false_branch
 				};
 			}
 	/ "if" _ exp:expression _ "then" _ true_branch:statement {
 				return {
 					type: "if",
 					condition: exp,
-					true_branch: true_branch
+					trueBranch: true_branch
 				};
 			}
 	
@@ -399,20 +404,26 @@ try_except_statement
 			return {
 				type: "try_except",
 				body: body,
-				handlers: hand
+				handlers: hand && hand.length > 0 ? hand[0]: null
 			};
 		}
 	
 exception_handlers
-	= exception_handler_clause
+	= exception_handler_clause 
 	/ statement_list
 
 exception_handler_clause
-	= exception_handler_list (_ "else" _ statement_list)?
+	= handlers:exception_handler_list els:(_ "else" _ statement_list)? {
+			return {
+				type: 'exception_handler_clause',
+				handlers: handlers,
+				otherwise: els && els.length > 3 ? els[3] : null
+			};
+		}
 
 exception_handler_list
-	= exception_handler _ ";" _ exception_handler_list
-	/ exception_handler
+	= head:exception_handler _ ";" _ tail:exception_handler_list { return [head].concat(tail); }
+	/ h:exception_handler { return [h]; }
 	
 exception_handler
 	= "on" (_ identifier _ ":" )? _ type _ "do" _ statement
@@ -436,17 +447,17 @@ simple_type
 	/ real_type
 
 ordinal_type
-	= "Integer"
+	= "Integer" { return { type: "inbuilt_type", typeName: "Integer" }; }
 	
 real_type
-	= "Real"
+	= "Real" { return { type: "inbuilt_type", typeName: "Real" }; }
 	
 string_type
-	= "string"
+	= "string" { return { type: "inbuilt_type", typeName: "string" }; }
 	
 type_identifier
-	= "type" _ identifier
-	/ identifier
+	= "type" _ id:identifier { return { type: "type_identifier", typeName: id }; }
+	/ id:identifier { return { type: "type_identifier", typeName: id }; }
 	
 expression
 	= left:simple_expression _ op:exp_binary_operator _ right:simple_expression { return { type: "binary_op", op: op, left: left, right: right }; }
@@ -467,7 +478,7 @@ factor_list
 	/ factor
 	
 factor
-	= "(" _ expression _ ")"
+	= "(" _ exp:expression _ ")" { return { type: "parens", expression: exp }; }
 	/ function_call
 	/ constant
 	/ set_constructor
