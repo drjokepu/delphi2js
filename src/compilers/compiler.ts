@@ -55,9 +55,10 @@ export abstract class Compiler {
 	}
 	
 	protected nodeError(node: ast.Node): Error {
-		console.error(JSON.stringify(node, null, 2));
+		let str = JSON.stringify(node, null, 2);
 		if (this.ctx) {
-			let str = '';
+			str += os.EOL + 'at:' + os.EOL;
+			
 			const stack = this.ctx.getStack();
 			for (let i = 0; i < stack.length; i++) {
 				for (let j = 0; j < i; j++) {
@@ -67,10 +68,8 @@ export abstract class Compiler {
 				str += stack[i].node.type;
 				str += os.EOL;
 			}
-			
-			console.log(str);
 		}
-		
+		console.error(str);
 		return new Error('Unsupported node type: ' + node.type);
 	}
 	

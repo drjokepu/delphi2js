@@ -1,7 +1,7 @@
 ///<reference path="../typings/tsd.d.ts" />
 import * as fs from 'fs';
 import * as Q from 'q';
-import * as ast from './ast';
+import * as ast from './compilers/ast';
 
 declare function require(path: string): any;
 var delphiParser = <DelphiParser>require('../parser/delphi.js');

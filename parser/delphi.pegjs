@@ -245,7 +245,7 @@ value_parameter
 	  }
 	
 variable_declaration_part
-	= "var" _ list:variable_declaration_list { return { name: "variable_declaration_part", list: list }; }
+	= "var" _ list:variable_declaration_list { return { type: "variable_declaration_part", list: list }; }
 	
 variable_declaration_list
 	= head:variable_declaration _ tail:variable_declaration_list { return [head].concat(tail); }

@@ -4,7 +4,7 @@
 		"outDir": "../es6"
 	},
 	"files": [
-		"ast.ts",
+		"compilers/ast.ts",
 		"compilers/compiler.ts",
 		"compilers/es5-compiler.ts",
 		"compilers/factory.ts",

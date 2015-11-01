@@ -56,7 +56,11 @@ export interface UsesClause extends Node {
 	
 }
 
-export type Declaration = VariableDeclaration | ProcedureFunctionDeclaration;
+export type Declaration = VariableDeclaration | VariableDeclarationPart | ProcedureFunctionDeclaration;
+
+export interface VariableDeclarationPart extends Node {
+	list: VariableDeclaration[];
+}
 
 export interface VariableDeclaration extends Node {
 	identifiers: Identifier[];
@@ -99,7 +103,7 @@ export interface Identifier extends Node {
 }
 
 export interface Block extends Node {
-	declarations: Node[],
+	declarations: Declaration[],
 	statements: CompoundStatement
 }
 

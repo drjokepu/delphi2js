@@ -48,6 +48,12 @@ class ES5Compiler extends compiler.Compiler {
 	
 	private compileDeclaration(node: ast.Declaration): void {
 		switch (node.type) {
+			case 'variable_declaration':
+				this.compileVariableDeclaration(<ast.VariableDeclaration>node);
+				break;
+			case 'variable_declaration_part':
+				this.compileVariableDeclarationPart(<ast.VariableDeclarationPart>node);
+				break;
 			case 'procedure_declaration':
 				this.compileProcedureDeclaration(<ast.ProcedureDeclaration>node);
 				break;
@@ -56,6 +62,48 @@ class ES5Compiler extends compiler.Compiler {
 				break;
 			default:
 				throw this.nodeError(node);
+		}
+	}
+	
+	private compileVariableDeclaration(node: ast.VariableDeclaration): void {
+		this.ctx.push(node);
+		try {
+			if (!node.identifiers || node.identifiers.length === 0) {
+				return;
+			}
+			
+			if (!node.expression) {
+				this.append('var ');
+				for (let i = 0; i < node.identifiers.length; i++) {
+					if (i > 0) {
+						this.append(',');
+					}
+					this.compileIdentifier(node.identifiers[i]);
+				}
+				this.append(';');
+			} else {
+				this.append('var ');
+				this.compileIdentifier(node.identifiers[0]);
+				this.append('=');
+				this.compileExpression(node.expression);
+				this.append(';');
+				
+				for (let i = 1; i = node.identifiers.length; i++) {
+					this.append('var ');
+					this.compileIdentifier(node.identifiers[i]);
+					this.append('=');
+					this.compileIdentifier(node.identifiers[0]);
+					this.append(';');
+				}
+			}
+		} finally {
+			this.ctx.pop();
+		}
+	}
+	
+	private compileVariableDeclarationPart(node: ast.VariableDeclarationPart): void {
+		for (let decl of node.list) {
+			this.compileVariableDeclaration(decl);
 		}
 	}
 	
@@ -130,6 +178,8 @@ class ES5Compiler extends compiler.Compiler {
 			if (!isTopLevel) {
 				this.append('{');
 			}
+			
+			this.compileDeclarations(node.declarations);
 			this.compileCompoundStatement(node.statements);
 			if (!isTopLevel) {
 				this.append('}');
