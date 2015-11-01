@@ -3,7 +3,12 @@ import colors from 'colors/safe';
 import * as os from 'os';
 import Parser from './parser';
 
-new Parser().parseFile('test-files/EventLog.pas').then(data => {
+if (process.argv.length < 3) {
+	console.error("usage: node delphi.pegjs source_file");
+	process.exit(0);
+}
+
+new Parser().parseFile(process.argv[2]).then(data => {
 	console.log(JSON.stringify(data, null, 2));
 }, err => {
 	if (err.name === 'SyntaxError') {
