@@ -64,7 +64,7 @@ function nodeError(node: ast.Node, ctx?: Context): Error {
 function padStringWithZeroes(str: string, minLength: number) {
 	if (str.length < minLength) {
 		let str2 = str;
-		while (str.length < minLength) {
+		while (str2.length < minLength) {
 			str2 = '0' + str2;
 		}
 		return str2;
@@ -439,7 +439,7 @@ class Compiler {
 		}
 		
 		if (node.value < 256) {
-			this.append('"\\x' + node.value.toString(16) + '"');
+			this.append('"\\x' + padStringWithZeroes(node.value.toString(16), 2) + '"');
 		} else {
 			this.append('"\\u' + padStringWithZeroes(node.value.toString(16), 4) + '"');
 		}

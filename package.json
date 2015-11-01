@@ -8,6 +8,8 @@
 		"babel-preset-es2015": "~6.0.8",
 		"babel-plugin-transform-es2015-modules-commonjs": "~6.0.2",
 		"colors": "~1.1.2",
+		"js-beautify": "~1.5.10",
+		"minimist": "~1.2.0",
 		"pegjs": "~0.9.0",
 		"q": "~1.4.1",
 		"typescript": "~1.6.2"
