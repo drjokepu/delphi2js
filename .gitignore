@@ -1,5 +1,5 @@
 node_modules
 es6
 bin
-test-files
-test_out.json
+test*
+**/.DS_Store
