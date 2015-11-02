@@ -29,11 +29,26 @@ class ES5Compiler extends compiler.Compiler {
 	}
 	
 	private compileUnit(node: ast.Unit): void {
-		this.compileImplementationPart(node.implementation);
+		this.compileInterfacePart(node.interfacePart);
+		this.compileImplementationPart(node.implementationPart);
+	}
+	
+	private compileInterfacePart(node: ast.InterfacePart): void {
+		this.ctx.push(node);
+		try {
+			this.compileDeclarations(node.declarations);
+		} finally {
+			this.ctx.pop();
+		}
 	}
 	
 	private compileImplementationPart(node: ast.ImplementationPart): void {
-		this.compileDeclarations(node.declarations);
+		this.ctx.push(node);
+		try {
+			this.compileDeclarations(node.declarations);
+		} finally {
+			this.ctx.pop();
+		}
 	}
 	
 	private compileDeclarations(declarations: ast.Declaration[]): void {
@@ -53,6 +68,16 @@ class ES5Compiler extends compiler.Compiler {
 				break;
 			case 'variable_declaration_part':
 				this.compileVariableDeclarationPart(<ast.VariableDeclarationPart>node);
+				break;
+			case 'const_declaration':
+				this.compileConstantDeclaration(<ast.ConstantDeclaration>node);
+				break;
+			case 'const_declaration_part':
+				this.compileConstantDeclarationPart(<ast.ConstantDeclarationPart>node);
+				break;
+			case 'procedure_header':
+				break;
+			case 'function_header':
 				break;
 			case 'procedure_declaration':
 				this.compileProcedureDeclaration(<ast.ProcedureDeclaration>node);
@@ -104,6 +129,25 @@ class ES5Compiler extends compiler.Compiler {
 	private compileVariableDeclarationPart(node: ast.VariableDeclarationPart): void {
 		for (let decl of node.list) {
 			this.compileVariableDeclaration(decl);
+		}
+	}
+	
+	private compileConstantDeclaration(node: ast.ConstantDeclaration): void {
+		this.ctx.push(node);
+		try {
+			this.append('var ');
+			this.compileIdentifier(node.identifier);
+			this.append('=');
+			this.compileExpression(node.value);
+			this.append(';');
+		} finally {
+			this.ctx.pop();
+		}
+	}
+	
+	private compileConstantDeclarationPart(node: ast.ConstantDeclarationPart): void {
+		for (let decl of node.list) {
+			this.compileConstantDeclaration(decl);
 		}
 	}
 	
@@ -376,6 +420,9 @@ class ES5Compiler extends compiler.Compiler {
 			case 'control_string':
 				this.compileControlString(<ast.ControlString>node);
 				break;
+			case 'integer_constant':
+				this.compileIntegerConstant(<ast.IntegerConstant>node);
+				break;
 			case 'parens':
 				this.compileParens(<ast.Parens>node);
 				break;
@@ -409,6 +456,10 @@ class ES5Compiler extends compiler.Compiler {
 		} else {
 			this.append('"\\u' + compiler.Compiler.padStringWithZeroes(node.value.toString(16), 4) + '"');
 		}
+	}
+	
+	private compileIntegerConstant(node: ast.IntegerConstant): void {
+		this.append(node.value.toString());
 	}
 	
 	private compileParens(node: ast.Parens): void {

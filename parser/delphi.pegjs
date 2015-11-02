@@ -155,8 +155,8 @@ unit
 			return {
 				type: "unit",
 				header: h,
-				interface: int,
-				implementation: imp,
+				interfacePart: int,
+				implementationPart: imp,
 				comments: {
 					pre: c_pre,
 					interface: c_int,
@@ -177,7 +177,7 @@ interface_part
 	= "interface" _ uses_clause:(uses_clause _)? declarations:(interface_declaration_part_list _)? {
 	  		return {
 			  type: "interface",
-			  usesClause: uses_clause && uses_clause.length > 0 ? uses_clause[0] : null,
+			  uses: uses_clause && uses_clause.length > 0 ? uses_clause[0] : null,
 			  declarations: declarations && declarations.length > 0 ? declarations[0] : null,
 			};
 	  }
@@ -192,15 +192,15 @@ interface_declaration_part
 	/ variable_declaration_part
 	
 constant_declaration_part
-	= "const" _ list:constant_declaration_list { return { type: "const_declaration_part", declarations: list }; }
-	/ "const" _ { return { type: "const_declaration_part", declarations: [] }; }
+	= "const" _ list:constant_declaration_list { return { type: "const_declaration_part", list: list }; }
+	/ "const" _ { return { type: "const_declaration_part", list: [] }; }
 
 constant_declaration_list
 	= head:constant_declaration _ tail:constant_declaration_list { return [head].concat(tail); }
 	/ decl:constant_declaration _ { return [decl]; }
 	
 constant_declaration
-	= identifier:identifier _ "=" _ value:expression ";" { return { type: "constant_declaration", identifier: identifier, value: value }; }
+	= identifier:identifier _ "=" _ value:expression ";" { return { type: "const_declaration", identifier: identifier, value: value }; }
 
 procedure_headers_part
 	= prodecure_header
@@ -265,7 +265,7 @@ implementation_part
 	= "implementation" _ uses:(uses_clause _)? decl:declaration_part {
 			return {
 				type: "implementation",
-				uses_clause: uses && uses.length > 0 ? uses[0] : null,
+				uses: uses && uses.length > 0 ? uses[0] : null,
 				declarations: decl
 			};
 	  }

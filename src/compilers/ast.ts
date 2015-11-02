@@ -17,8 +17,8 @@ export interface Program extends Node {
 
 export interface Unit extends Node {
 	header: UnitHeader;
-	interface: InterfacePart;
-	implementation: ImplementationPart;
+	interfacePart: InterfacePart;
+	implementationPart: ImplementationPart;
 }
 
 export interface ProgramComments {
@@ -45,10 +45,12 @@ export interface UnitHeader extends Node {
 }
 
 export interface InterfacePart extends Node {
-	
+	uses: UsesClause;
+	declarations: Declaration[];
 }
 
 export interface ImplementationPart extends Node {
+	uses: UsesClause;
 	declarations: Declaration[];
 }
 
@@ -56,7 +58,12 @@ export interface UsesClause extends Node {
 	
 }
 
-export type Declaration = VariableDeclaration | VariableDeclarationPart | ProcedureFunctionDeclaration;
+export type Declaration = 
+	VariableDeclaration |
+	VariableDeclarationPart |
+	ConstantDeclaration |
+	ConstantDeclarationPart |
+	ProcedureFunctionDeclaration;
 
 export interface VariableDeclarationPart extends Node {
 	list: VariableDeclaration[];
@@ -66,6 +73,15 @@ export interface VariableDeclaration extends Node {
 	identifiers: Identifier[];
 	variableType: Type;
 	expression: Expression;
+}
+
+export interface ConstantDeclarationPart extends Node {
+	list: ConstantDeclaration[];
+}
+
+export interface ConstantDeclaration extends Node {
+	identifier: Identifier;
+	value: Expression;
 }
 
 export interface ProcedureFunctionDeclaration extends Node {
@@ -159,13 +175,17 @@ export interface TryFinallyStatement extends Node {
 }
 
 export type Expression = Constant | Parens | BinaryOp | FunctionCall | SetConstructor;
-export type Constant = StringConstant | ControlString;
+export type Constant = StringConstant | ControlString | IntegerConstant;
 
 export interface StringConstant extends Node {
 	value: string;
 }
 
 export interface ControlString extends Node {
+	value: Number;
+}
+
+export interface IntegerConstant extends Node {
 	value: Number;
 }
 
