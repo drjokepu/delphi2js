@@ -1,3 +1,5 @@
+import * as scope from './scope';
+
 export const types = {
 	assignment: 'assignment',
 	binaryOp: 'binary_op',
@@ -33,6 +35,7 @@ export type PasFile = Program | Unit;
 
 export interface Node {
 	type: string;
+	scope?: scope.Scope;
 }
 
 export interface Comment extends Node {

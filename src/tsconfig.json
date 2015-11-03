@@ -8,6 +8,7 @@
 		"compilers/compiler.ts",
 		"compilers/es5-compiler.ts",
 		"compilers/factory.ts",
+		"compilers/scope.ts",
 		"delphi2js.ts",
 		"parser.ts"
 	]
