@@ -97,6 +97,7 @@ export type Declaration =
 	VariableDeclarationPart |
 	ConstantDeclaration |
 	ConstantDeclarationPart |
+	ProcedureFunctionHeader |
 	ProcedureFunctionDeclaration;
 
 export interface VariableDeclarationPart extends Node {
@@ -116,6 +117,18 @@ export interface ConstantDeclarationPart extends Node {
 export interface ConstantDeclaration extends Node {
 	identifier: Identifier;
 	value: Expression;
+}
+
+export interface ProcedureFunctionHeader extends Node {
+	identifier: Identifier;
+	params: ParameterDeclaration[];
+}
+
+export interface ProcedureHeader extends ProcedureFunctionHeader {	
+}
+
+export interface FunctionHeader extends ProcedureFunctionHeader {
+	returnType: Type;
 }
 
 export interface ProcedureFunctionDeclaration extends Node {
@@ -172,11 +185,9 @@ export type AssignmentTarget = VariableReference;
 export type VariableReference = Identifier;
 
 export interface ProcedureStatement extends Node {
-	target: ProcedureStatementTarget;
+	target: CallTarget;
 	params: Expression[];
 }
-
-export type ProcedureStatementTarget = Identifier;
 
 export interface CompoundStatement extends Node {
 	list: Statement[];
@@ -234,11 +245,11 @@ export interface BinaryOp extends Node {
 }
 
 export interface FunctionCall extends Node {
-	target: FunctionCallTarget;
+	target: CallTarget;
 	params: Expression[];
 }
 
-export type FunctionCallTarget = Identifier;
+export type CallTarget = Identifier;
 
 export interface SetConstructor extends Node {
 	list: SetGroup[];

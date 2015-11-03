@@ -3,10 +3,10 @@ export interface Identifiers {
 }
 
 export enum IdentifierType {
-	Constant,
-	Variable,
-	Procedure,
-	Function
+	Constant = 1,
+	Variable = 2,
+	Procedure = 3,
+	Function = 4
 }
 
 export class Scope {
@@ -16,6 +16,10 @@ export class Scope {
 	constructor(parent?: Scope) {
 		this.identifiers = {};
 		this.parent = parent ? parent : null;
+	}
+	
+	addIdentifier(name: string, type: IdentifierType) {
+		this.identifiers[name] = type;
 	}
 	
 	identifierType(name: string): IdentifierType {
@@ -29,5 +33,18 @@ export class Scope {
 				return null;
 			}
 		}
+	}
+	
+	canInvoke(name: string): boolean {
+		const type = this.identifierType(name);
+		if (type) {
+			return Scope.canInvokeIdentifierType(type);
+		} else {
+			return true;
+		}
+	}
+	
+	static canInvokeIdentifierType(type: IdentifierType): boolean {
+		return type === IdentifierType.Procedure || type === IdentifierType.Function;
 	}
 }

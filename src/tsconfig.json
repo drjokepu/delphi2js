@@ -6,9 +6,11 @@
 	"files": [
 		"compilers/ast.ts",
 		"compilers/compiler.ts",
+		"compilers/context.ts",
 		"compilers/es5-compiler.ts",
 		"compilers/factory.ts",
 		"compilers/scope.ts",
+		"compilers/scope-analyzer.ts",
 		"delphi2js.ts",
 		"parser.ts"
 	]

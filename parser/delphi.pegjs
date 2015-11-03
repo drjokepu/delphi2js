@@ -351,16 +351,13 @@ variable_reference
 	= identifier
 	
 procedure_statement
-	= target:procedure_statement_target params:(_ actual_parameter_list)? {
+	= target:call_target params:(_ actual_parameter_list)? {
 			return {
 				type: "procedure_statement",
 				target: target,
 				params: params && params.length > 1 ? params[1] : null
 			};
-		}
-
-procedure_statement_target
-	= identifier	
+		}	
 
 structured_statement
 	= compound_statement
@@ -498,7 +495,7 @@ integer_constant
 	= value:[0-9]+ { return { type: "integer_constant", value: parseInt(value.join(""), 10) }; }
 	
 function_call
-	= target:function_call_target params:(_ actual_parameter_list)? {
+	= target:call_target params:(_ actual_parameter_list)? {
 			return {
 				type: "function_call",
 				target: target,
@@ -506,7 +503,7 @@ function_call
 			};
 		}
 	
-function_call_target
+call_target
 	= identifier
 	
 actual_parameter_list

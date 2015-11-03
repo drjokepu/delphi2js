@@ -1,5 +1,7 @@
 import * as ast from './ast';
 import * as compiler from './compiler';
+import * as context from './context';
+import * as scopeAnalyzer from './scope-analyzer';
 
 class ES5Compiler extends compiler.Compiler {
 	constructor() {
@@ -7,7 +9,9 @@ class ES5Compiler extends compiler.Compiler {
 	}
 	
 	compile(fileAst: ast.PasFile): string {
-		this.ctx = new compiler.Context(fileAst);
+		scopeAnalyzer.attachScope(fileAst);
+		
+		this.ctx = new context.Context(fileAst);
 		this.output = '';
 		
 		switch (fileAst.type) {
@@ -300,24 +304,9 @@ class ES5Compiler extends compiler.Compiler {
 	private compileProcedureStatement(node: ast.ProcedureStatement): void {
 		this.ctx.push(node);
 		try {
-			this.compileProcedureStatementTarget(node.target);
+			this.compileCallTarget(node.target);
 			this.compileParameterList(node.params);
 			this.append(';');
-		} finally {
-			this.ctx.pop();
-		}
-	}
-	
-	private compileProcedureStatementTarget(node: ast.ProcedureStatementTarget): void {
-		this.ctx.push(node);
-		try {
-			switch (node.type) {
-				case ast.types.identifier:
-					this.compileIdentifier(<ast.Identifier>node);
-					break;
-				default:
-					throw this.nodeError(node);
-			}
 		} finally {
 			this.ctx.pop();
 		}
@@ -504,14 +493,19 @@ class ES5Compiler extends compiler.Compiler {
 	private compileFunctionCall(node: ast.FunctionCall): void {
 		this.ctx.push(node);
 		try {
-			this.compileFunctionCallTarget(node.target);
-			this.compileParameterList(node.params);
+			if ((node.params && node.params.length > 0) || scopeAnalyzer.canInvoke(node.target, this.ctx)) {
+				this.compileCallTarget(node.target);
+				this.compileParameterList(node.params);
+			} else {
+				// this is not a function call, but reading the value of a variable or constant
+				this.compileCallTarget(node.target);
+			}
 		} finally {
 			this.ctx.pop();
 		}
 	}
 	
-	private compileFunctionCallTarget(node: ast.FunctionCallTarget): void {
+	private compileCallTarget(node: ast.CallTarget): void {
 		this.ctx.push(node);
 		try {
 			switch (node.type) {
