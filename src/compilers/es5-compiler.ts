@@ -11,10 +11,10 @@ class ES5Compiler extends compiler.Compiler {
 		this.output = '';
 		
 		switch (fileAst.type) {
-			case 'program':
+			case ast.types.program:
 				this.compileProgram(<ast.Program>fileAst);
 				break;
-			case 'unit':
+			case ast.types.unit:
 				this.compileUnit(<ast.Unit>fileAst);
 				break;
 			default:
@@ -63,26 +63,26 @@ class ES5Compiler extends compiler.Compiler {
 	
 	private compileDeclaration(node: ast.Declaration): void {
 		switch (node.type) {
-			case 'variable_declaration':
+			case ast.types.variableDeclaration:
 				this.compileVariableDeclaration(<ast.VariableDeclaration>node);
 				break;
-			case 'variable_declaration_part':
+			case ast.types.variableDeclarationPart:
 				this.compileVariableDeclarationPart(<ast.VariableDeclarationPart>node);
 				break;
-			case 'const_declaration':
+			case ast.types.constantDeclaration:
 				this.compileConstantDeclaration(<ast.ConstantDeclaration>node);
 				break;
-			case 'const_declaration_part':
+			case ast.types.constantDeclarationPart:
 				this.compileConstantDeclarationPart(<ast.ConstantDeclarationPart>node);
 				break;
-			case 'procedure_header':
+			case ast.types.procedureHeader:
 				break;
-			case 'function_header':
+			case ast.types.functionHeader:
 				break;
-			case 'procedure_declaration':
+			case ast.types.procedureDeclaration:
 				this.compileProcedureDeclaration(<ast.ProcedureDeclaration>node);
 				break;
-			case 'function_declaration':
+			case ast.types.functionDeclaration:
 				this.compileFunctionDeclaration(<ast.FunctionDeclaration>node);
 				break;
 			default:
@@ -193,7 +193,7 @@ class ES5Compiler extends compiler.Compiler {
 	
 	private compileParameterDeclaration(node: ast.ParameterDeclaration): void {
 		switch (node.type) {
-			case 'value_parameter':
+			case ast.types.valueParameter:
 				this.compileValueParameter(<ast.ValueParameter>node);
 				break;
 			default:
@@ -245,22 +245,22 @@ class ES5Compiler extends compiler.Compiler {
 	
 	private compileStatement(node: ast.Statement): void {
 		switch (node.type) {
-			case 'assignment':
+			case ast.types.assignment:
 				this.compileAssignment(<ast.Assignment>node);
 				break;
-			case 'procedure_statement':
+			case ast.types.procedureStatement:
 				this.compileProcedureStatement(<ast.ProcedureStatement>node);
 				break;
-			case 'compound_statement':
+			case ast.types.compoundStatement:
 				this.compileCompoundStatement(<ast.CompoundStatement>node);
 				break;
-			case 'if':
+			case ast.types.ifStatement:
 				this.compileIfStatement(<ast.IfStatement>node);
 				break;
-			case 'try_except':
+			case ast.types.tryExcept:
 				this.compileTryExceptStatement(<ast.TryExceptStatement>node);
 				break;
-			case 'try_finally':
+			case ast.types.tryFinally:
 				this.compileTryFinallyStatement(<ast.TryFinallyStatement>node);
 				break;
 			default:
@@ -289,7 +289,7 @@ class ES5Compiler extends compiler.Compiler {
 	
 	private compileAssignmentTarget(node: ast.AssignmentTarget) {
 		switch (node.type) {
-			case 'identifier':
+			case ast.types.identifier:
 				this.compileIdentifier(<ast.Identifier>node);
 				break;
 			default:
@@ -312,7 +312,7 @@ class ES5Compiler extends compiler.Compiler {
 		this.ctx.push(node);
 		try {
 			switch (node.type) {
-				case 'identifier':
+				case ast.types.identifier:
 					this.compileIdentifier(<ast.Identifier>node);
 					break;
 				default:
@@ -342,7 +342,14 @@ class ES5Compiler extends compiler.Compiler {
 	private compileCompoundStatement(node: ast.CompoundStatement): void {
 		this.ctx.push(node);
 		try {
+			const isInBlock = this.isInBlock();
+			if (!isInBlock) {
+				this.append('{');
+			}
 			this.compileStatementList(node.list);
+			if (!isInBlock) {
+				this.append('}');
+			}
 		} finally {
 			this.ctx.pop();
 		}
@@ -368,7 +375,7 @@ class ES5Compiler extends compiler.Compiler {
 	private compileTryExceptStatement(node: ast.TryExceptStatement): void {
 		this.ctx.push(node);
 		try {
-			if (node.handlers && (<ast.ExceptionHandlerClause>node.handlers).type === 'exception_handler_clause') {
+			if (node.handlers && (<ast.ExceptionHandlerClause>node.handlers).type === ast.types.exceptionHandlerClause) {
 				throw new Error('Exception handlers are not implement yet.');
 			}
 			
@@ -414,25 +421,25 @@ class ES5Compiler extends compiler.Compiler {
 	
 	private compileExpression(node: ast.Expression): void {
 		switch (node.type) {
-			case 'string_constant':
+			case ast.types.stringConstant:
 				this.compileStringConstant(<ast.StringConstant>node);
 				break;
-			case 'control_string':
+			case ast.types.controlString:
 				this.compileControlString(<ast.ControlString>node);
 				break;
-			case 'integer_constant':
+			case ast.types.integerConstant:
 				this.compileIntegerConstant(<ast.IntegerConstant>node);
 				break;
-			case 'parens':
+			case ast.types.parens:
 				this.compileParens(<ast.Parens>node);
 				break;
-			case 'binary_op':
+			case ast.types.binaryOp:
 				this.compileBinaryOp(<ast.BinaryOp>node);
 				break;
-			case 'function_call':
+			case ast.types.functionCall:
 				this.compileFunctionCall(<ast.FunctionCall>node);
 				break;
-			case 'set_constructor':
+			case ast.types.setConstructor:
 				this.compileSetConstructor(<ast.SetConstructor>node);
 				break;
 			default:
@@ -508,7 +515,7 @@ class ES5Compiler extends compiler.Compiler {
 		this.ctx.push(node);
 		try {
 			switch (node.type) {
-				case 'identifier':
+				case ast.types.identifier:
 					this.compileIdentifier(<ast.Identifier>node);
 					break;
 				default:
@@ -534,7 +541,7 @@ class ES5Compiler extends compiler.Compiler {
 				}
 				
 				// TODO: range support
-				if (node.list[i].type === 'range') {
+				if (node.list[i].type === ast.types.range) {
 					throw new Error('Ranges in set constructors are not implemented yet.');
 				} else {
 					this.compileExpression(<ast.Expression>node.list[i]);

@@ -51,7 +51,11 @@ export abstract class Compiler {
 	}
 	
 	protected isTopLevel(): boolean {
-		return this.ctx.state(1).node.type === 'program';
+		return this.ctx.state(1).node.type === ast.types.program;
+	}
+	
+	protected isInBlock(): boolean {
+		return this.ctx.state(1).node.type === ast.types.block;
 	}
 	
 	protected nodeError(node: ast.Node): Error {

@@ -1,3 +1,34 @@
+export const types = {
+	assignment: 'assignment',
+	binaryOp: 'binary_op',
+	block: 'block',
+	compoundStatement: 'compound_statement',
+	constantDeclaration: 'const_declaration',
+	constantDeclarationPart: 'const_declaration_part',
+	controlString: 'control_string',
+	exceptionHandlerClause: 'exception_handler_clause',
+	functionCall: 'function_call',
+	functionDeclaration: 'function_declaration',
+	functionHeader: 'function_header',
+	identifier: 'identifier',
+	ifStatement: 'if',
+	integerConstant: 'integer_constant',
+	parens: 'parens',
+	procedureDeclaration: 'procedure_declaration',
+	procedureHeader: 'procedure_header',
+	procedureStatement: 'procedure_statement',
+	program: 'program',
+	range: 'range',
+	setConstructor: 'set_constructor',
+	stringConstant: 'string_constant',
+	tryExcept: 'try_except',
+	tryFinally: 'try_finally',
+	unit: 'unit',
+	valueParameter: 'value_parameter',
+	variableDeclaration: 'variable_declaration',
+	variableDeclarationPart: 'variable_declaration_part'
+};
+
 export type PasFile = Program | Unit;
 
 export interface Node {
